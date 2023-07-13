@@ -32,7 +32,7 @@ def main():
                 \n\t(4) directory path containing input nodal temperatures files \
                 \n\t(5) output directory path \
                 \n\t(6) Reference/initial temperature (in the same units as nodal temperature) \
-                \n\t(7) liquidus temperature (in the same units as nodal temperature) \
+                \n\t(7) Flag to determine interface (S: for Solidus, L: for Liquidus, A: for avg of Solidus and Liquidus) \
                 \n\t(8) layerNumberStart \
                 \n\t(9) layerNumberEnd \
                 \n\t(10) trajectoryNumberStart \
@@ -47,7 +47,7 @@ def main():
     nodalTempInputDirectoryPath = sys.argv[4]
     outputPath = sys.argv[5]
     refTemperature = float(sys.argv[6])
-    temperatureLiquidus = float(sys.argv[7])
+    interfaceTemperatureFlag = str(sys.argv[7])
     layerNumberStart = int(sys.argv[8])
     layerNumberEnd = int(sys.argv[9])
     trajectoryNumberStart = int(sys.argv[10])
@@ -77,10 +77,27 @@ def main():
     startIndicesPartition, endIndicesPartition = performLinearPartitioning(len(listConnectivity),size_comm)
     iElementStart = startIndicesPartition[rank]
     iElementEnd = endIndicesPartition[rank]
+    nElementsPerProcessor = iElementEnd - iElementStart + 1
+    listRadiiRegionsStart = [0,1.713525,2.189868,2.736886,3.22405,3.743497,4.249974]
+    listRadiiRegionsEnd = [1.713525,2.189868,2.736886,3.22405,3.743497,4.249974,4.503479]
+    listSolidusTemperaturesRegions = [1290,1290,1298,1251,1246,1252,1277]
+    listLiquidusTemperaturesRegions = [1350,1350,1379,1346,1348,1353,1337]
+    listAverageTemperaturesRegions = [0.5*(listSolidusTemperaturesRegions[i]+listLiquidusTemperaturesRegions[i]) for i in range(0,len(listLiquidusTemperaturesRegions))]
+    
+    if interfaceTemperatureFlag == "S":
+        listTemperaturesInterfaceRegions = listSolidusTemperaturesRegions
+    elif interfaceTemperatureFlag == "L":
+        listTemperaturesInterfaceRegions = listLiquidusTemperaturesRegions
+    elif interfaceTemperatureFlag == "A":
+        listTemperaturesInterfaceRegions = listAverageTemperaturesRegions
+    else:
+        raise RuntimeError('Flag to determine the interface is not valid')
+        
     
     listCoordinatesCentroidPerProcessor = []
     listCoordinatesNodalElementalPerProcessor = []
-    for iElement in range(iElementStart, iElementEnd):        
+    listTemperaturesInterfaceElementalPerProcessor = []
+    for iElement in range(iElementStart, iElementEnd+1):
         listConnectivityElement = listConnectivity[iElement]
         coordinatesCentroid = np.zeros(3)
         listCoordinatesNodalElemental = [[] for ii in range(0,3)]
@@ -89,12 +106,26 @@ def main():
             for iDim in range(0,3):
                 listCoordinatesNodalElemental[iDim].append(listCoordinatesNodal[idNode-1][iDim])
                 coordinatesCentroid[iDim] = coordinatesCentroid[iDim] + listCoordinatesNodal[idNode-1][iDim]
-        coordinatesCentroid = (1/8)*coordinatesCentroid    
+        coordinatesCentroid = (1/8)*coordinatesCentroid
+        radiiCentroid = math.sqrt(coordinatesCentroid[0]**2 + coordinatesCentroid[1]**2)
+        for iRegion in range(0,len(listRadiiRegionsStart)):
+            if radiiCentroid > listRadiiRegionsStart[iRegion] and radiiCentroid < listRadiiRegionsEnd[iRegion]:
+                listTemperaturesInterfaceElementalPerProcessor.append(listTemperaturesInterfaceRegions[iRegion])
+                
         listCoordinatesCentroidPerProcessor.append(coordinatesCentroid)
         listCoordinatesNodalElementalPerProcessor.append(listCoordinatesNodalElemental)
     
+    print('rank:',rank,'listTemperaturesInterfaceElementalPerProcessor:',len(listTemperaturesInterfaceElementalPerProcessor),startIndicesPartition[rank], endIndicesPartition[rank],endIndicesPartition[rank]-startIndicesPartition[rank]+1)
     listTimesSolidification,listCoordinatesCentroidal,listCoolingRates,listTemperaturesNodalAtSolidification,listTemperaturesCentroidalAtSolidification,listThermalGradients,listNodesSurroundingThisCentroid,listFileNames = ([] for ii in range(8))
-    
+    listTempPerProcessor = [0 for i in range(nElementsPerProcessor)]
+    listTimesSolidificationConsideringRemelting = [0 for i in range(nElementsPerProcessor)]
+    listCoordinatesCentroidalConsideringRemelting = [[0,0,0] for i in range(nElementsPerProcessor)]
+    listCoolingRatesConsideringRemelting = [0 for i in range(nElementsPerProcessor)]
+    listTemperaturesNodalAtSolidificationConsideringRemelting = [0 for i in range(nElementsPerProcessor)]
+    listTemperaturesCentroidalAtSolidificationConsideringRemelting = [0 for i in range(nElementsPerProcessor)]
+    listThermalGradientsConsideringRemelting = [0 for i in range(nElementsPerProcessor)]
+    listNodesSurroundingThisCentroidConsideringRemelting = [[0,0,0,0,0,0,0,0] for i in range(nElementsPerProcessor)]
+     
     for iFile in range(0,len(listFileNamesNodalTemperatures)):
         start_iFile = MPI.Wtime()
         fileNameNodalTemperatures = listFileNamesNodalTemperatures[iFile]
@@ -103,12 +134,13 @@ def main():
         end_read = MPI.Wtime()
         listTimes, listTemperatures = readTemperatures(fileNameNodalTemperatures)
         nElementsCount = 0
-        for iElement in range(iElementStart, iElementEnd):
+        for iElement in range(iElementStart, iElementEnd+1):
             listConnectivityElement = listConnectivity[iElement]
             listConnectivityElement_orig = listConnectivity_orig[iElement]
             nElementsCount = nElementsCount + 1
-            coordinatesCentroid = listCoordinatesCentroidPerProcessor[nElementsCount-1]
+            coordinatesCentroid = listCoordinatesCentroidPerProcessor[nElementsCount-1]            
             listCoordinatesNodalElemental = listCoordinatesNodalElementalPerProcessor[nElementsCount-1]
+            listTemperatureInterfaceElement = listTemperaturesInterfaceElementalPerProcessor[nElementsCount-1]
             temperaturesElemental_prev = [refTemperature for i in range(0,8)]
             temperatureCentroidal_prev = refTemperature
             time_prev = 0
@@ -119,25 +151,38 @@ def main():
                     idNode = listConnectivityElement[iNode]
                     temperaturesElemental_cur.append(float(listTemperatures[iTime][idNode-1]))
                 temperatureCentroidal_cur = stats.mean(temperaturesElemental_cur)                
-                if temperatureCentroidal_cur < temperatureLiquidus and temperatureCentroidal_prev > temperatureLiquidus:
-                    listFileNames.append(fileNameNodalTemperatures)
-                    timeStartSolidification = time_cur - ((temperatureCentroidal_cur-temperatureLiquidus)/(temperatureCentroidal_cur-temperatureCentroidal_prev))*(time_cur-time_prev)
+                if temperatureCentroidal_cur < listTemperatureInterfaceElement and temperatureCentroidal_prev > listTemperatureInterfaceElement:
+
+                    timeStartSolidification = time_cur - ((temperatureCentroidal_cur-listTemperatureInterfaceElement)/(temperatureCentroidal_cur-temperatureCentroidal_prev))*(time_cur-time_prev)
                     time_ratio = (time_cur-timeStartSolidification)/(time_cur-time_prev)
                     listTemperaturesNodalAtSolidification = [temperaturesElemental_cur[i] - (temperaturesElemental_cur[i]-temperaturesElemental_prev[i])*time_ratio for i in range(0,8)]
                     temperatureCentroidalAtSolidification = temperatureCentroidal_cur - (temperatureCentroidal_cur - temperatureCentroidal_prev)*time_ratio
-                    listTimesSolidification.append(timeStartSolidification)
-                    listCoordinatesCentroidal.append(coordinatesCentroid)
-                    listCoolingRates.append((temperatureCentroidal_prev-temperatureCentroidal_cur)/(time_cur-time_prev))
-                    listTemperaturesCentroidalAtSolidification.append(temperatureCentroidalAtSolidification)
-                    listNodesSurroundingThisCentroid.append(listConnectivityElement_orig)
+                    coolingRate = (temperatureCentroidal_prev-temperatureCentroidal_cur)/(time_cur-time_prev)
                     dN_dxyz = dShapeFunction_dCaterianCoords(listCoordinatesNodalElemental, [0,0,0])
                     magnitude = 0
                     for iDimension in range(0,3):
                         gradient_ = 0
                         for iNode in range(0,8):
                             gradient_ = gradient_ + dN_dxyz[iNode][iDimension]*listTemperaturesNodalAtSolidification[iNode]
-                        magnitude = magnitude + gradient_**2
-                    listThermalGradients.append(math.sqrt(magnitude))
+                        magnitude = magnitude + gradient_**2                    
+                    magnitude = math.sqrt(magnitude)                    
+                    
+                    listFileNames.append(fileNameNodalTemperatures)                    
+                    listTimesSolidification.append(timeStartSolidification)
+                    listCoordinatesCentroidal.append(coordinatesCentroid)
+                    listCoolingRates.append(coolingRate)
+                    listTemperaturesCentroidalAtSolidification.append(temperatureCentroidalAtSolidification)
+                    listNodesSurroundingThisCentroid.append(listConnectivityElement_orig)
+                    listThermalGradients.append(magnitude)
+                    
+                    listFileNamesConsideringRemelting[nElementsCount-1] = fileNameNodalTemperatures
+                    listTimesSolidificationConsideringRemelting[nElementsCount-1] = timeStartSolidification
+                    listCoordinatesCentroidalConsideringRemelting[nElementsCount-1] = coordinatesCentroid
+                    listCoolingRatesConsideringRemelting[nElementsCount-1] = coolingRate
+                    listTemperaturesCentroidalAtSolidificationConsideringRemelting[nElementsCount-1] = temperatureCentroidalAtSolidification
+                    listNodesSurroundingThisCentroidConsideringRemelting[nElementsCount-1] = listConnectivityElement_orig
+                    listThermalGradientsConsideringRemelting[nElementsCount-1] = magnitude
+                    
                 temperatureCentroidal_prev = temperatureCentroidal_cur
                 temperaturesElemental_prev = temperaturesElemental_cur
                 time_prev = time_cur
@@ -155,6 +200,14 @@ def main():
         comm.send(listCoolingRates,dest=0)
         comm.send(listTemperaturesCentroidalAtSolidification,dest=0)
         comm.send(listThermalGradients,dest=0)
+        
+        comm.send(listFileNamesConsideringRemelting,dest=0)
+        comm.send(listTimesSolidificationConsideringRemelting,dest=0)
+        comm.send(listCoordinatesCentroidalConsideringRemelting,dest=0)
+        comm.send(listNodesSurroundingThisCentroidConsideringRemelting,dest=0)
+        comm.send(listCoolingRatesConsideringRemelting,dest=0)
+        comm.send(listTemperaturesCentroidalAtSolidificationConsideringRemelting,dest=0)
+        comm.send(listThermalGradientsConsideringRemelting,dest=0)        
     
     if rank == 0:
         listFileNamesAll = []
@@ -205,8 +258,57 @@ def main():
             for iRank in range(1,size_comm):
                 data = comm.recv(source=iRank)
                 listThermalGradientsAll.append(data) 
+        #
+        listFileNamesConsideringRemeltingAll = []
+        listFileNamesConsideringRemeltingAll.append(listFileNamesConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listFileNamesConsideringRemeltingAll.append(data)
+    
+        listTimesSolidificationConsideringRemeltingAll = []
+        listTimesSolidificationConsideringRemeltingAll.append(listTimesSolidificationConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listTimesSolidificationConsideringRemeltingAll.append(data)
+            
+        listCoordinatesCentroidalConsideringRemeltingAll = []
+        listCoordinatesCentroidalConsideringRemeltingAll.append(listCoordinatesCentroidalConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listCoordinatesCentroidalConsideringRemeltingAll.append(data)
+                
+        listNodesSurroundingThisCentroidConsideringRemeltingAll = []
+        listNodesSurroundingThisCentroidConsideringRemeltingAll.append(listNodesSurroundingThisCentroidConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listNodesSurroundingThisCentroidConsideringRemeltingAll.append(data)
+    
+        listCoolingRatesConsideringRemeltingAll = []
+        listCoolingRatesConsideringRemeltingAll.append(listCoolingRatesConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listCoolingRatesConsideringRemeltingAll.append(data)
+            
+        listTemperaturesCentroidalAtSolidificationConsideringRemeltingAll = []
+        listTemperaturesCentroidalAtSolidificationConsideringRemeltingAll.append(listTemperaturesCentroidalAtSolidificationConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listTemperaturesCentroidalAtSolidificationConsideringRemeltingAll.append(data)
 
-        out_path = pathDir + 'G_coolingRates_temperatures.dat'
+        listThermalGradientsConsideringRemeltingAll = []
+        listThermalGradientsConsideringRemeltingAll.append(listThermalGradientsConsideringRemelting)
+        if size_comm > 0:
+            for iRank in range(1,size_comm):
+                data = comm.recv(source=iRank)
+                listThermalGradientsConsideringRemeltingAll.append(data) 
+
+        out_path = pathDir + 'G_K_noRemelting_layer_' + str(layerNumberStart) + '_' + str(layerNumberEnd) + '.dat'
         with open(out_path, 'w') as file_out:
             file_out.write('fileName    stepTime    centroidcoordX  centroidcoordY   centroidcoordZ    surrNode1    surrNode2   surrNode3   surrNode4   surrNode5   surrNode6   surrNode7   surrNode8   tempCentroid    thermalGradient     coolingRate\n')
             for iData in range(0,len(listThermalGradientsAll)):
@@ -229,6 +331,33 @@ def main():
                                                                              listCoolingRatesAll[iData][iSubData]
                                                                             ))
         file_out.close() 
+        
+        
+        out_path = pathDir + 'G_K_withRemelting_layer_' + str(layerNumberStart) + '_' + str(layerNumberEnd) + '.dat'
+        with open(out_path, 'w') as file_out:
+            file_out.write('fileName    stepTime    centroidcoordX  centroidcoordY   centroidcoordZ    surrNode1    surrNode2   surrNode3   surrNode4   surrNode5   surrNode6   surrNode7   surrNode8   tempCentroid    thermalGradient     coolingRate\n')
+            for iData in range(0,len(listThermalGradientsConsideringRemeltingAll)):
+                for iSubData in range(0,len(listThermalGradientsConsideringRemeltingAll[iData])):
+                    if listTemperaturesCentroidalAtSolidificationConsideringRemeltingAll[iData][iSubData] != 0:
+                        file_out.write("{0:45s}{1:25.10f}{2:25.10f}{3:25.10f}{4:25.10f}{5:10d}{6:10d}{7:10d}{8:10d}{9:10d}{10:10d}{11:10d}{12:10d}{13:25.10f}{14:25.10f}{15:25.10f}\n".format(listFileNamesConsideringRemeltingAll[iData][iSubData],
+                                                                                listTimesSolidificationConsideringRemeltingAll[iData][iSubData], 
+                                                                                listCoordinatesCentroidalConsideringRemeltingAll[iData][iSubData][0],
+                                                                                listCoordinatesCentroidalConsideringRemeltingAll[iData][iSubData][1],
+                                                                                listCoordinatesCentroidalConsideringRemeltingAll[iData][iSubData][2],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][0],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][1],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][2],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][3],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][4],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][5],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][6],
+                                                                                listNodesSurroundingThisCentroidConsideringRemeltingAll[iData][iSubData][7],                                                                             
+                                                                                listTemperaturesCentroidalAtSolidificationConsideringRemeltingAll[iData][iSubData],
+                                                                                listThermalGradientsConsideringRemeltingAll[iData][iSubData],
+                                                                                listCoolingRatesConsideringRemeltingAll[iData][iSubData]
+                                                                                ))
+        file_out.close()
+        
         
     if rank == 0 : print('Total time elapsed: ', str(MPI.Wtime()-time_start), ' (s)')
             
