@@ -1,4 +1,4 @@
-''' This code compuates the therma gradient and cooling rate at the centroids of all the elements for all the time steps 
+''' This code computes the therma gradient and cooling rate at the centroids of all the elements for all the time steps 
     given the nodal temperatures at all the time steps. Nodal temperatures corresponding to each abaqus step are extracted from 
     abaqus odb file before runnning this code. The nodal and elemental numbers are renumbered and these files are required before 
     running this code'''
@@ -83,17 +83,22 @@ def main():
     listSolidusTemperaturesRegions = [1290,1290,1298,1251,1246,1252,1277]
     listLiquidusTemperaturesRegions = [1350,1350,1379,1346,1348,1353,1337]
     listAverageTemperaturesRegions = [0.5*(listSolidusTemperaturesRegions[i]+listLiquidusTemperaturesRegions[i]) for i in range(0,len(listLiquidusTemperaturesRegions))]
+    solidusTemperatureBasePlate = 1290
+    liquidusTemperatureBasePlate = 1350
+    averageTemperatureBasePlate = 0.5*(solidusTemperatureBasePlate + liquidusTemperatureBasePlate)
     
     if interfaceTemperatureFlag == "S":
         listTemperaturesInterfaceRegions = listSolidusTemperaturesRegions
+        temperatureInterfaceBasePlate = solidusTemperatureBasePlate
     elif interfaceTemperatureFlag == "L":
         listTemperaturesInterfaceRegions = listLiquidusTemperaturesRegions
+        temperatureInterfaceBasePlate = liquidusTemperatureBasePlate
     elif interfaceTemperatureFlag == "A":
         listTemperaturesInterfaceRegions = listAverageTemperaturesRegions
+        temperatureInterfaceBasePlate = averageTemperatureBasePlate
     else:
         raise RuntimeError('Flag to determine the interface is not valid')
-        
-    
+            
     listCoordinatesCentroidPerProcessor = []
     listCoordinatesNodalElementalPerProcessor = []
     listTemperaturesInterfaceElementalPerProcessor = []
@@ -109,8 +114,10 @@ def main():
         coordinatesCentroid = (1/8)*coordinatesCentroid
         radiiCentroid = math.sqrt(coordinatesCentroid[0]**2 + coordinatesCentroid[1]**2)
         for iRegion in range(0,len(listRadiiRegionsStart)):
-            if radiiCentroid > listRadiiRegionsStart[iRegion] and radiiCentroid < listRadiiRegionsEnd[iRegion]:
+            if radiiCentroid > listRadiiRegionsStart[iRegion] and radiiCentroid < listRadiiRegionsEnd[iRegion] and coordinatesCentroid[2] > 0:
                 listTemperaturesInterfaceElementalPerProcessor.append(listTemperaturesInterfaceRegions[iRegion])
+            else:    
+                listTemperaturesInterfaceElementalPerProcessor.append(temperatureInterfaceBasePlate)
                 
         listCoordinatesCentroidPerProcessor.append(coordinatesCentroid)
         listCoordinatesNodalElementalPerProcessor.append(listCoordinatesNodalElemental)
