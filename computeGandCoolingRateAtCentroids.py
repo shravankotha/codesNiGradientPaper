@@ -51,7 +51,7 @@ def main():
     time_start = MPI.Wtime()
     nameFileCoordinatesNodal = sys.argv[1]
     fileName_elementConnectivity_orig = sys.argv[2]
-    outputPath = sys.argv[3]
+    fileName_elementConnectivity = sys.argv[3]
     refTemperature = float(sys.argv[4])
     interfaceTemperatureFlag = str(sys.argv[5])
     solidusLiquidusScalingFactorDeposit = float(sys.argv[6])
