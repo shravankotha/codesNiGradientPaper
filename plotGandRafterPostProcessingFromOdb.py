@@ -74,8 +74,8 @@ def main():
         columnspacing_1         = 0.5
         frameon_1               = True
         ncol_1                  = 4
-        textPositionFactors_X1  = [0.50,0.15,0.40]
-        textPositionFactors_Y1  = [0.99,0.40,0.30]
+        textPositionFactors_X1  = [0.50,0.25,0.45]
+        textPositionFactors_Y1  = [0.95,0.42,0.30]
         rotationAngle_1         = 28
         
         aspectRatio_2           = 0.99
@@ -97,7 +97,7 @@ def main():
         listDiffusivityLiquidRegions               =   [3E-9,3E-9,3E-9,3E-9,3E-9,3E-9,3E-9] # m^2/s
         listCoefficientGibbsThompsonRegions        =   [1E-7,1E-7,1E-7,1E-7,1E-7,1E-7,1E-7] # K-m
         listCoefficientSolutePartitionRegions      =   [0.48,0.48,0.48,0.48,0.48,0.48,0.48]
-        listCoefficientHarmonicPerturbationRegions =   [28,28,28,28,28,28,28]  
+        listCoefficientHarmonicPerturbationRegions =   [28,28,28,28,28,28,28]
         
         aspectRatio_1           = 0.75
         borderpad_1             = 0.2
@@ -126,12 +126,12 @@ def main():
         rotationAngle_2         = 30
 
     # --------- include all the layers
-    listIdLayersToExclude       = []
-    listIdRegionsToExclude      = []
-    plotLayersSeparately        = False
-    plotRegionsSeparately       = True
-    plotRadialDataSeparately    = False
-    tagFigure                   = 'allLayers'
+    #listIdLayersToExclude       = []
+    #listIdRegionsToExclude      = []
+    #plotLayersSeparately        = False
+    #plotRegionsSeparately       = True
+    #plotRadialDataSeparately    = False
+    #tagFigure                   = 'allLayers'
     
     # --------- including only layers 74 to 80
     #listIdLayersToExclude      = 7*[ii for ii in range(1,74)]
@@ -142,11 +142,18 @@ def main():
     #tagFigure                  = 'layer_74_to_80'    
     
     # --------- including only layers 1 to 20
-    #listIdLayersToExclude      =  7*[ii for ii in range(21,81)]
-    #listIdRegionsToExclude     = [1 for ii in range(21,81)]  + [2 for ii in range(21,81)]  + [3 for ii in range(21,81)]  + [4 for ii in range(21,81)]  + [5 for ii in range(21,81)]  + [6 for ii in range(21,81)]  + [7 for ii in range(21,81)] 
-    #plotRegionsSeparately      = True
-    #plotRadialDataSeparately   = False
-    #tagFigure                  = 'layer_1_to_20'
+    listIdLayersToExclude      =  7*[ii for ii in range(21,81)]
+    listIdRegionsToExclude     = [1 for ii in range(21,81)]  + [2 for ii in range(21,81)]  + [3 for ii in range(21,81)]  + [4 for ii in range(21,81)]  + [5 for ii in range(21,81)]  + [6 for ii in range(21,81)]  + [7 for ii in range(21,81)] 
+    plotRegionsSeparately      = False
+    plotRadialDataSeparately   = True
+    tagFigure                  = 'layer_1_to_20'
+
+    # --------- including only layer 21
+    #listIdLayersToExclude      =  7*[ii for ii in range(1,21)] + 7*[ii for ii in range(22,81)]
+    #listIdRegionsToExclude     = [1 for ii in range(1,21)]  + [2 for ii in range(1,21)]  + [3 for ii in range(1,21)]  + [4 for ii in range(1,21)]  + [5 for ii in range(1,21)]  + [6 for ii in range(1,21)]  + [7 for ii in range(1,21)] + [1 for ii in range(22,81)]  + [2 for ii in range(22,81)]  + [3 for ii in range(22,81)]  + [4 for ii in range(22,81)]  + [5 for ii in range(22,81)]  + [6 for ii in range(22,81)]  + [7 for ii in range(22,81)] 
+    #plotRegionsSeparately      = False
+    #plotRadialDataSeparately   = True
+    #tagFigure                  = 'layer_21'
 
     # --------- including only layer 80
     #listIdLayersToExclude      = 7*[ii for ii in range(1,80)]
