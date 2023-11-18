@@ -44,7 +44,7 @@ def main():
     dataFile = np.genfromtxt(nameFile, skip_header = nHeaderLines, dtype = 'str')
     nRowsEulerAngles = np.shape(dataFile)[0] - 1
     file_out = open(out_file, 'w') 
-    file_out.write('trialNumber     misOriAngleForTheGivenPercentile \n')    
+    file_out.write('trialNumber     misOriAngleForTheGivenPercentile    refPixelEulerAngles\n')    
 
     listMisOri, listPercentiles = [[] for ii in range(0,2)]
     with alive_bar(nTrials,title='Processing trials...',bar='squares',spinner=None) as progress_bar:    
@@ -62,9 +62,10 @@ def main():
                     arrayEulerAngles = np.array([float(dataFile[idRowRef,0]),float(dataFile[idRowRef,1]),float(dataFile[idRowRef,2])])
                     isNotFoundAValidRefPixel = False
             if isNotFoundAValidRefPixel:
-                raise RuntimeError("No valid reference pixel is found in the maximum number of attempts")
+                raise RuntimeError("No valid reference pixel is found in the maximum number of attempts. Increase max attempts and/or check the data!")
                 
-            gA = computeCrystalOrientationMatrix(arrayEulerAngles)    
+            gA = computeCrystalOrientationMatrix(arrayEulerAngles)  
+            arrayEulerAnglesRef = arrayEulerAngles            
     
             listMisOri = []
             for jj in range(0,nSamplesInEachTrial):
@@ -77,24 +78,29 @@ def main():
                     O = librarySymmetryMatricesCubic()
                     minMisValue = sys.float_info.max
                     for symMatrix in O:
-                        misOri = abs((180/math.pi)*math.acos((np.trace(np.dot(gA,np.matmul(np.linalg.inv(gB),symMatrix)))-1)/2))
+                        tmp = (np.trace(np.dot(gA,np.matmul(np.linalg.inv(gB),symMatrix)))-1)/2
+                        if abs(tmp) > 1:
+                            tmp = round(tmp)
+                        misOri = abs((180/math.pi)*math.acos(tmp))
                         minMisValue = min(minMisValue,misOri)
                     listMisOri.append(minMisValue)
-            misOriPercentile = np.percentile(listMisOri, requiredMisorientationPercentile)        
+            misOriPercentile = np.percentile(listMisOri, requiredMisorientationPercentile)
             listPercentiles.append(misOriPercentile)
-            file_out.write("{0:10d}{1:12.6f}\n".format(iTrial,misOriPercentile))
+            file_out.write("{0:10d}{1:12.6f}{2:12.6f}{3:12.6f}{4:12.6f}\n".format(iTrial,misOriPercentile,arrayEulerAnglesRef[0],arrayEulerAnglesRef[1],arrayEulerAnglesRef[2]))
             file_out.flush()
             progress_bar()
                 
     file_out.close()
-    bins = [2*ii for ii in range(0,int(max(listPercentiles)/2))]
-    plotHistogram(listPercentiles,bins = bins,
+    binwidth = 2
+    bins = [binwidth*ii for ii in range(0,int(max(listPercentiles)/binwidth))]
+    plotHistogram(listPercentiles,
+                  bins = bins,
                   yDataType = 'fraction',
                   shouldSaveThePlot = False,
-                  pathFigNameToSave = "histogram_count.png",
+                  pathFigNameToSave = "histogram_fractionOfTrials_" + str(requiredMisorientationPercentile) + "percentileMisOri" + ".png",
                   histogramBinType = 'bar',
                   binFillColor = 'black',
-                  binEdgecolor = 'white', 
+                  binEdgecolor = 'white',
                   labelX = 'Angle in degrees',
                   labelY = 'Fraction of trials',
                   scaleX = "linear",
@@ -105,8 +111,8 @@ def main():
                   fontSizeYticks = 24,
                   fontName = 'Times New Roman',
                   fontWeight = "normal",
-                  nPixelsPerInch = 200                  
+                  nPixelsPerInch = 200
                   )
       
 if __name__ == "__main__":
-    main()    
+    main()
