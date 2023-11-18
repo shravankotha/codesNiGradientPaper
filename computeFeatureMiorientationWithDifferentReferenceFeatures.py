@@ -47,6 +47,7 @@ def main():
     file_out.write('trialNumber     misOriAngleForTheGivenPercentile    refPixelEulerAngles\n')    
 
     listMisOri, listPercentiles = [[] for ii in range(0,2)]
+    O = librarySymmetryMatricesCubic()
     with alive_bar(nTrials,title='Processing trials...',bar='squares',spinner=None) as progress_bar:    
         for iTrial in range(0,nTrials):
             # randomly chose a reference pixel
@@ -74,8 +75,7 @@ def main():
                     continue
                 else:
                     arrayEulerAngles = np.array([float(dataFile[ii,0]),float(dataFile[ii,1]),float(dataFile[ii,2])])
-                    gB = computeCrystalOrientationMatrix(arrayEulerAngles)
-                    O = librarySymmetryMatricesCubic()
+                    gB = computeCrystalOrientationMatrix(arrayEulerAngles)                    
                     minMisValue = sys.float_info.max
                     for symMatrix in O:
                         tmp = (np.trace(np.dot(gA,np.matmul(np.linalg.inv(gB),symMatrix)))-1)/2

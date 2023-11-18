@@ -64,6 +64,7 @@ def main():
     gA = computeCrystalOrientationMatrix(arrayEulerAngles)                
     file_out.write('# Euler angles of reference feature : ' + str(arrayEulerAngles[0]) + '  ' + str(arrayEulerAngles[1]) + '    ' + str(arrayEulerAngles[2]) + '\n')
     listMisOri = []
+    O = librarySymmetryMatricesCubic()
     with alive_bar(nLines,title='Processing features...',bar='squares',spinner=None) as progress_bar:
         with open(nameFile, 'r') as f:
             count = 0
@@ -77,8 +78,7 @@ def main():
                         continue
                     else:
                         arrayEulerAngles = np.array([float(data[0]),float(data[1]),float(data[2])])                        
-                        gB = computeCrystalOrientationMatrix(arrayEulerAngles)
-                        O = librarySymmetryMatricesCubic()
+                        gB = computeCrystalOrientationMatrix(arrayEulerAngles)                        
                         minMisValue = sys.float_info.max
                         for symMatrix in O:
                             tmp = (np.trace(np.dot(gA,np.matmul(np.linalg.inv(gB),symMatrix)))-1)/2
