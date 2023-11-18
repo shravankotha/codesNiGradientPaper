@@ -39,7 +39,7 @@ def main():
     nSamplesInEachTrial = int(sys.argv[5])
     out_file = str(sys.argv[6])
     tolerance = 1E-6
-    maxNumberOfAttempsToFindRefPixel = 20
+    maxNumberOfAttempsToFindRefPixel = 100
 
     dataFile = np.genfromtxt(nameFile, skip_header = nHeaderLines, dtype = 'str')
     nRowsEulerAngles = np.shape(dataFile)[0] - 1
