@@ -76,12 +76,15 @@ def main():
                     if data[0].lower() == 'nan' or  data[1].lower() == 'nan' or data[2].lower() == 'nan':
                         continue
                     else:
-                        arrayEulerAngles = np.array([float(data[0]),float(data[1]),float(data[2])])
+                        arrayEulerAngles = np.array([float(data[0]),float(data[1]),float(data[2])])                        
                         gB = computeCrystalOrientationMatrix(arrayEulerAngles)
                         O = librarySymmetryMatricesCubic()
                         minMisValue = sys.float_info.max
                         for symMatrix in O:
-                            misOri = abs((180/math.pi)*math.acos((np.trace(np.dot(gA,np.matmul(np.linalg.inv(gB),symMatrix)))-1)/2))
+                            tmp = (np.trace(np.dot(gA,np.matmul(np.linalg.inv(gB),symMatrix)))-1)/2
+                            if abs(tmp) > 1:
+                                tmp = round(tmp)
+                            misOri = abs((180/math.pi)*math.acos(tmp))                                                    
                             minMisValue = min(minMisValue,misOri)
                         listMisOri.append(minMisValue)
                         file_out.write("{0:12.6f}\n".format(minMisValue))
