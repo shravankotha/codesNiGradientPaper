@@ -1,5 +1,5 @@
 """
-    This code does the following:
+    This code does the following: (Essentially computing the misorientation of one random pixel wrt to large number of other sampled pixels and finally computing the statistics of this data)
     (1) computes relative misorientation (misorientation of nSamplesInEachTrial number of features wrt to a RANDOMLY CHOSEN reference feature)
     (2) The misorientation angle corresponding to requiredMisorientationPercentile is computed (This is basically the angle below which the misorientations of requiredMisorientationPercentile percentage of features lie)
     (3) This is repeated for a number of trials and histogram of misOriPercentile is plotted    
