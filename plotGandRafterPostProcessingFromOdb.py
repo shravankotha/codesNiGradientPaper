@@ -126,12 +126,12 @@ def main():
         rotationAngle_2         = 30
 
     # --------- include all the layers
-    #listIdLayersToExclude       = []
-    #listIdRegionsToExclude      = []
-    #plotLayersSeparately        = False
-    #plotRegionsSeparately       = True
-    #plotRadialDataSeparately    = False
-    #tagFigure                   = 'allLayers'
+    listIdLayersToExclude       = []
+    listIdRegionsToExclude      = []
+    plotLayersSeparately        = False
+    plotRegionsSeparately       = True
+    plotRadialDataSeparately    = False
+    tagFigure                   = 'allLayers'
     
     # --------- including only layers 74 to 80
     #listIdLayersToExclude      = 7*[ii for ii in range(1,74)]
@@ -142,11 +142,11 @@ def main():
     #tagFigure                  = 'layer_74_to_80'    
     
     # --------- including only layers 1 to 20
-    listIdLayersToExclude      =  7*[ii for ii in range(21,81)]
-    listIdRegionsToExclude     = [1 for ii in range(21,81)]  + [2 for ii in range(21,81)]  + [3 for ii in range(21,81)]  + [4 for ii in range(21,81)]  + [5 for ii in range(21,81)]  + [6 for ii in range(21,81)]  + [7 for ii in range(21,81)] 
-    plotRegionsSeparately      = False
-    plotRadialDataSeparately   = True
-    tagFigure                  = 'layer_1_to_20'
+    #listIdLayersToExclude      =  7*[ii for ii in range(21,81)]
+    #listIdRegionsToExclude     = [1 for ii in range(21,81)]  + [2 for ii in range(21,81)]  + [3 for ii in range(21,81)]  + [4 for ii in range(21,81)]  + [5 for ii in range(21,81)]  + [6 for ii in range(21,81)]  + [7 for ii in range(21,81)] 
+    #plotRegionsSeparately      = False
+    #plotRadialDataSeparately   = True
+    #tagFigure                  = 'layer_1_to_20'
 
     # --------- including only layer 21
     #listIdLayersToExclude      =  7*[ii for ii in range(1,21)] + 7*[ii for ii in range(22,81)]
@@ -286,6 +286,20 @@ def main():
                listPDASKurzFisherModel.append(PDAS)
                     
     fileCurrent.close()
+    
+    out_path = 'coolingRates_PDAS.dat'
+    with open(out_path, 'w') as file_out:
+            file_out.write('idLayer     idRegion     coordRadial    numberOfRemelts     coolingRate    PDAS_Trivedi  PDAS_KurzFisher\n')
+            for iData in range(0,len(listPDASTrivediModel)):
+                file_out.write("{0:10d}{1:10d}{2:25.10f}{3:10d}{4:25.10f}{5:25.10f}{6:25.10f}\n".format(listLayerIDs[iData],
+                                                                         listRegionsIDs[iData],
+                                                                         listCoordinatesRadial[iData],
+                                                                         listNumberOfRemelts[iData],
+                                                                         listCoolingRates[iData],
+                                                                         listPDASTrivediModel[iData],
+                                                                         listPDASKurzFisherModel[iData]
+                                                                        ))
+    file_out.close()    
     
     # -------------------------------------------------------------------------------------------------------------
     # ------------------------------------- Plot scatter plots in 3D
