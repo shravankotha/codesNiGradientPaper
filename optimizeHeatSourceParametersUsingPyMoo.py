@@ -2,25 +2,37 @@
 import numpy as np
 from pymoo.core.problem import ElementwiseProblem
 
-class MyProblem(ElementwiseProblem):    # MyProblem is a new class that inherits methods and properties from ElementwiseProblem class
+class MyProblem(ElementwiseProblem):
 
     def __init__(self):
-        super().__init__(n_var=2,   # super() function is used to give access to methods and properties of a parent or sibling class
+        super().__init__(n_var=2,
                          n_obj=2,
-                         n_ieq_constr=2,
+                         n_ieq_constr=0,
                          xl=np.array([-2,-2]),
                          xu=np.array([2,2]))
 
     def _evaluate(self, x, out, *args, **kwargs):
-    
-        f1 = 100 * (x[0]**2 + x[1]**2)
-        f2 = (x[0]-1)**2 + x[1]**2
+        # create a new folder and copy reference simulation files
         
-        g1 = 2*(x[0]-0.1) * (x[0]-0.9) / 0.18
-        g2 = - 20*(x[0]-0.4) * (x[0]-0.6) / 4.8
+        # change heat sources parameters in abaqus inp files
+        
+        
+        # run abaqus simulation
+        
+        
+        # post-process to obtain melt-pool depth and width
+        
+        
+        # Evaluate the objective function
+        
+        f1 = (depthSimulation - depthTarget)**2
+        f2 = (widthSimulation - widthTarget)**2
+        
+        #g1 = 2*(x[0]-0.1) * (x[0]-0.9) / 0.18
+        #g2 = - 20*(x[0]-0.4) * (x[0]-0.6) / 4.8
 
         out["F"] = [f1, f2]
-        out["G"] = [g1, g2]
+        #out["G"] = [g1, g2]
         
 problem = MyProblem()
 
