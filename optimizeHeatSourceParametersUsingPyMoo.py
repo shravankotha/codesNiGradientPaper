@@ -1,6 +1,9 @@
 ### -------------------------------- Implement the problem 
 import numpy as np
 from pymoo.core.problem import ElementwiseProblem
+import random
+import time
+import os
 
 class MyProblem(ElementwiseProblem):
 
@@ -12,27 +15,45 @@ class MyProblem(ElementwiseProblem):
                          xu=np.array([2,2]))
 
     def _evaluate(self, x, out, *args, **kwargs):
+        pwd = os.getcwd()
         # create a new folder and copy reference simulation files
+        source_dir_name = str(pwd) + '\\' + "RefFiles" + "\\"
+        ref_inp_file_name = "beadAndHeatSourceInputs.inp"
+        source_dir_path = str(source_dir_name)
+        # change heat sources parameters in abaqus inp files        
+        current_time = time.time()
+        random.seed(current_time)
+        random_number = random.randint(1, 1000000)        
+        dest_dir_name = 'Simulation_' + str(random_number)
+        dest_dir_path = str(pwd) + '\\' + str(dest_dir_name) + "\\"
+        if not os.path.exists(dest_dir_path):
+            os.makedirs(dest_dir_path)
         
-        # change heat sources parameters in abaqus inp files
+        shutil.copytree(source_dir_path, dest_dir_path, dirs_exist_ok=True)        
+        nameFile = dest_dir_path + '\\' + str(ref_inp_file_name)
         
+        beadWidth = x[0]
+        beadHeight = x[1]
+        laserSpotRadius = x[2]
+        penetrationDepth = x[3]
+        
+        success = replaceAstringInAFile(nameFile,"__beadWidth__",str(beadWidth))
+        success = replaceAstringInAFile(nameFile,"__beadHeight__",str(beadHeight))
+        success = replaceAstringInAFile(nameFile,"__laserSpotRadius__ ",str(laserSpotRadius))
+        success = replaceAstringInAFile(nameFile,"__penetrationDepth__",str(penetrationDepth))
         
         # run abaqus simulation
-        
+        command_to_execute = "abaqus job=singleTrack.inp -np 4 -inter"
+        os.chdir(dest_dir_path)
+        os.system(command_to_execute)
         
         # post-process to obtain melt-pool depth and width
         
         
-        # Evaluate the objective function
-        
+        # Evaluate the objective function        
         f1 = (depthSimulation - depthTarget)**2
         f2 = (widthSimulation - widthTarget)**2
-        
-        #g1 = 2*(x[0]-0.1) * (x[0]-0.9) / 0.18
-        #g2 = - 20*(x[0]-0.4) * (x[0]-0.6) / 4.8
-
         out["F"] = [f1, f2]
-        #out["G"] = [g1, g2]
         
 problem = MyProblem()
 
