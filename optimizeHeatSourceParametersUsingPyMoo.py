@@ -43,7 +43,7 @@ class MyProblem(ElementwiseProblem):
         success = replaceAstringInAFile(nameFile,"__penetrationDepth__",str(penetrationDepth))
         
         # run abaqus simulation
-        command_to_execute = "abaqus job=singleTrack.inp -np 4 -inter"
+        command_to_execute = "abaqus job=singleTrack_Model.inp cpus=4 -inter"
         os.chdir(dest_dir_path)
         os.system(command_to_execute)
         
@@ -51,7 +51,7 @@ class MyProblem(ElementwiseProblem):
         
         
         # Evaluate the objective function        
-        f1 = (depthSimulation - depthTarget)**2
+        f1 = (depthSimulation1 - depthTarget1)**2
         f2 = (widthSimulation - widthTarget)**2
         out["F"] = [f1, f2]
         
