@@ -10,9 +10,9 @@ from replaceAstringInAFile import replaceAstringInAFile
 class MyProblem(ElementwiseProblem):
 
     def __init__(self):
-        super().__init__(n_var=2, n_obj=2, n_ieq_constr=0,
-                         xl=np.array([0.1E-3,0.1E-3]),
-                         xu=np.array([1.5E-3,1.5E-3]))
+        super().__init__(n_var = 2, n_obj = 2, n_ieq_constr = 0,
+                         xl = np.array([0.1E-3,0.1E-3]),
+                         xu = np.array([1.5E-3,1.5E-3]))
 
     def _evaluate(self, x, out, *args, **kwargs):
         pwd = os.getcwd()
@@ -46,7 +46,7 @@ class MyProblem(ElementwiseProblem):
         os.system(command_to_execute)
         
         # post-process to obtain melt-pool depth and width
-        command_to_execute = "abaqus python C:\\Users\\Abhishek\\Desktop\\repositories\\codesNiGradientPaper\\getMeltpoolDimensionsFromAbaqusOutputs.py singleTrack_Model.odb NT11 3 1360"
+        command_to_execute = "abaqus python C:\\Users\\Abhishek\\Desktop\\repositories\\codesNiGradientPaper\\getMeltpoolDimensionsFromAbaqusOutputs.py singleTrack_Model.odb entireGeometry NT11 4 1360"
         os.system(command_to_execute)
         
         [l_x,l_y,l_z] = np.loadtxt('meltPoolDimensions.out')        
@@ -58,13 +58,13 @@ class MyProblem(ElementwiseProblem):
         
         # Evaluate the objective function
         widthTarget = 1.0E-3
-        depthTarget = 0.6E-3        
+        depthTarget = 0.6E-3
         
         f1 = (widthSimulation - widthTarget)**2
         f2 = (depthSimulation - depthTarget)**2
         
         out["F"] = [f1, f2]
-        print '-----------------------------------------------------------------------------------------------------------------------'
+        print ('-----------------------------------------------------------------------------------------------------------------------')
         
 problem = MyProblem()
 
@@ -74,8 +74,8 @@ from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 
-algorithm = NSGA2(pop_size=10, n_offsprings=4, sampling=FloatRandomSampling(),
-    crossover=SBX(prob=0.9, eta=15), mutation=PM(eta=20), eliminate_duplicates=True)
+algorithm = NSGA2(pop_size = 10, n_offsprings = 4, sampling = FloatRandomSampling(),
+    crossover = SBX(prob = 0.9, eta = 15), mutation = PM(eta = 20), eliminate_duplicates = True)
     
 ### ---------------------- Determine a termination criteria
 from pymoo.termination import get_termination
@@ -83,7 +83,7 @@ termination = get_termination("n_gen", 20)
 
 ### ---------------------- Optimize
 from pymoo.optimize import minimize
-res = minimize(problem, algorithm, termination, seed=1, save_history=True, verbose=True)    # problem, algorithm and termination are defined above
+res = minimize(problem, algorithm, termination, seed = 1, save_history = True, verbose = True)    # problem, algorithm and termination are defined above
 
 X = res.X
 F = res.F
@@ -93,9 +93,9 @@ print('Objective function value : ', F)
 ### ---------------------- write the pareto front to file
 out_path = 'paretoFront.out'
 with open(out_path, 'w') as file_out:
-    file_out.write("laserSpotRadius      penetrationDepth      meltPoolWidth        meltPoolDepth\n")
+    file_out.write("laserSpotRadius      penetrationDepth      objFunc_meltPoolWidth        objFunc_meltPoolDepth\n")
     for iRow in range(0, len(X[:,0])):
-        file_out.write("{0:25.10f}{1:25.10f}{2:25.10f}{3:25.10f}\n".format(X[iRow,0], X[iRow,1], F[iRow,0], F[iRow,1]))       
+        file_out.write("{0:35.20f}{1:35.20f}{2:35.20f}{3:35.20f}\n".format(X[iRow,0], X[iRow,1], F[iRow,0], F[iRow,1]))       
 file_out.close()
 
 ### --------------------- Visualize
