@@ -46,7 +46,7 @@ class MyProblem(ElementwiseProblem):
         os.system(command_to_execute)
         
         # post-process to obtain melt-pool depth and width
-        command_to_execute = "abaqus python C:\\Users\\Abhishek\\Desktop\\repositories\\codesNiGradientPaper\\getMeltpoolDimensionsFromAbaqusOutputs.py singleTrack_Model.odb entireGeometry NT11 4 1360"
+        command_to_execute = "abaqus python C:\\Users\\Abhishek\\Desktop\\repositories\\codesNiGradientPaper\\getMeltpoolDimensionsFromAbaqusOutputs.py singleTrack_Model.odb setBasePlate NT11 4 1360"
         os.system(command_to_execute)
         
         [l_x,l_y,l_z] = np.loadtxt('meltPoolDimensions.out')        
@@ -57,8 +57,12 @@ class MyProblem(ElementwiseProblem):
         os.chdir(pwd)
         
         # Evaluate the objective function
-        widthTarget = 1.0E-3
-        depthTarget = 0.6E-3
+        # IN625
+        widthTarget = 1.34E-3
+        depthTarget = 0.29E-3
+        # IN738
+        #widthTarget = 1.49E-3
+        #depthTarget = 0.33E-3
         
         f1 = (widthSimulation - widthTarget)**2
         f2 = (depthSimulation - depthTarget)**2
@@ -74,12 +78,12 @@ from pymoo.operators.crossover.sbx import SBX
 from pymoo.operators.mutation.pm import PM
 from pymoo.operators.sampling.rnd import FloatRandomSampling
 
-algorithm = NSGA2(pop_size = 10, n_offsprings = 4, sampling = FloatRandomSampling(),
+algorithm = NSGA2(pop_size = 4, n_offsprings = 2, sampling = FloatRandomSampling(),
     crossover = SBX(prob = 0.9, eta = 15), mutation = PM(eta = 20), eliminate_duplicates = True)
     
 ### ---------------------- Determine a termination criteria
 from pymoo.termination import get_termination
-termination = get_termination("n_gen", 20)
+termination = get_termination("n_gen", 2)
 
 ### ---------------------- Optimize
 from pymoo.optimize import minimize
