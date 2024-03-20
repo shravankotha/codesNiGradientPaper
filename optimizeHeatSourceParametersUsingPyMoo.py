@@ -30,7 +30,7 @@ class MyProblem(ElementwiseProblem):
         shutil.copytree(source_dir_path, dest_dir_path, dirs_exist_ok=True)        
         nameFile = dest_dir_path + '\\' + str(ref_inp_file_name)
         
-        beadWidth = 1.5E-3
+        beadWidth = 2.25E-3
         beadHeight = 0.6E-3
         laserSpotRadius = x[0]
         penetrationDepth = x[1]
