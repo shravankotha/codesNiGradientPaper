@@ -10,7 +10,7 @@ from replaceAstringInAFile import replaceAstringInAFile
 class MyProblem(ElementwiseProblem):
 
     def __init__(self):
-        super().__init__(n_var = 2, n_obj = 2, n_ieq_constr = 0,
+        super().__init__(n_var = 3, n_obj = 2, n_ieq_constr = 0,
                          xl = np.array([0.1E-3,0.1E-3,0.2]),
                          xu = np.array([1.5E-3,1.5E-3,0.7]))
 
