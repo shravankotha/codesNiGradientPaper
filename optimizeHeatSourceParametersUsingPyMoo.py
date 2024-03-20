@@ -56,7 +56,7 @@ class MyProblem(ElementwiseProblem):
         lengthSimulation = l_y
         widthSimulation = l_x
         depthSimulation = l_z
-        print('laserSpotRadius, penetrationDepth, meltPoolWidth, meltPoolDepth : ', laserSpotRadius, penetrationDepth, widthSimulation, depthSimulation)
+        print('laserSpotRadius, penetrationDepth, absorptionCoeff, meltPoolWidth, meltPoolDepth : ', laserSpotRadius, penetrationDepth, absorptionCoeff, widthSimulation, depthSimulation)
         os.chdir(pwd)
         
         # Evaluate the objective function
