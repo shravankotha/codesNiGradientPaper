@@ -83,46 +83,50 @@ listElementsWithInterface, listInterfaceElementIndicesInElementSet = findElement
                                                                                                                 temperatureLiquidus)
 
 if listElementsWithInterface == []:
-    raise RuntimeError('There are zero elements on solid liquid interface')
 
+    l_x = 0
+    l_y = 0
+    l_z = 0
+
+else:
 # -------------------------------------- evaluate the centroid of each cube, temperature at the centroid and gradient at the centroid
-listCoordinatesNaturalAtCentroidAll, listTemperaturesAtCentroidAll = [[],[],[]], []
+    listCoordinatesNaturalAtCentroidAll, listTemperaturesAtCentroidAll = [[],[],[]], []
 
-for iElement in range(0,len(listElementsWithInterface)):
+    for iElement in range(0,len(listElementsWithInterface)):
 
-    idElement = listElementsWithInterface[iElement]
+        idElement = listElementsWithInterface[iElement]
     
-    indexElementInElSet = listInterfaceElementIndicesInElementSet[iElement]
+        indexElementInElSet = listInterfaceElementIndicesInElementSet[iElement]
     
-    listNodesConnectedElement = listElementConnectivity[indexElementInElSet]
+        listNodesConnectedElement = listElementConnectivity[indexElementInElSet]
     
-    listTemperaturesNodalElement = [listNodalTemperatures[idNode-1] for idNode in listNodesConnectedElement]
+        listTemperaturesNodalElement = [listNodalTemperatures[idNode-1] for idNode in listNodesConnectedElement]
     
-    listCoordinatesNodalElement = [[],[],[]]
-    
-    for iDimension in range(0,3):
-    
-        listCoordinatesNodalElement[iDimension] = [listCoordinatesNodal[iDimension][idNode-1] for idNode in listNodesConnectedElement]
-    
-    listNaturalCoodsInterfaceCubeNodes, temperatureNodesNewWithInterface = findCubesEnclosingSolidLiquidInterfaceInAnElement(listTemperaturesNodalElement,
-                                                                                                                             temperatureLiquidus, 
-                                                                                                                             maxDivisionsCube = 8)
-                                                                                                                             
-    for iCube in range(0, len(listNaturalCoodsInterfaceCubeNodes)):
-        
-        listCoordinatesCartesianAtCentroid, listCoordinatesNaturalAtCentroid, temperatureAtCentroid = getCentroidValuesInterfaceCube(listTemperaturesNodalElement,
-                                                                                                                                     listCoordinatesNodalElement,
-                                                                                                                                     listNaturalCoodsInterfaceCubeNodes[iCube])
+        listCoordinatesNodalElement = [[],[],[]]
     
         for iDimension in range(0,3):
-        
-            listCoordinatesNaturalAtCentroidAll[iDimension].append(listCoordinatesCartesianAtCentroid[iDimension])
-            
-        listTemperaturesAtCentroidAll.append(temperatureAtCentroid)
     
-l_x = max(listCoordinatesNaturalAtCentroidAll[0])-min(listCoordinatesNaturalAtCentroidAll[0])
-l_y = max(listCoordinatesNaturalAtCentroidAll[1])-min(listCoordinatesNaturalAtCentroidAll[1])
-l_z = max(listCoordinatesNaturalAtCentroidAll[2])-min(listCoordinatesNaturalAtCentroidAll[2])
+            listCoordinatesNodalElement[iDimension] = [listCoordinatesNodal[iDimension][idNode-1] for idNode in listNodesConnectedElement]
+    
+            listNaturalCoodsInterfaceCubeNodes, temperatureNodesNewWithInterface = findCubesEnclosingSolidLiquidInterfaceInAnElement(listTemperaturesNodalElement,
+                                                                                                                                     temperatureLiquidus, 
+                                                                                                                                     maxDivisionsCube = 8)
+                                                                                                                             
+        for iCube in range(0, len(listNaturalCoodsInterfaceCubeNodes)):
+        
+            listCoordinatesCartesianAtCentroid, listCoordinatesNaturalAtCentroid, temperatureAtCentroid = getCentroidValuesInterfaceCube(listTemperaturesNodalElement,
+                                                                                                                                         listCoordinatesNodalElement,
+                                                                                                                                         listNaturalCoodsInterfaceCubeNodes[iCube])
+    
+            for iDimension in range(0,3):
+        
+                listCoordinatesNaturalAtCentroidAll[iDimension].append(listCoordinatesCartesianAtCentroid[iDimension])
+            
+            listTemperaturesAtCentroidAll.append(temperatureAtCentroid)
+    
+    l_x = max(listCoordinatesNaturalAtCentroidAll[0])-min(listCoordinatesNaturalAtCentroidAll[0])
+    l_y = max(listCoordinatesNaturalAtCentroidAll[1])-min(listCoordinatesNaturalAtCentroidAll[1])
+    l_z = max(listCoordinatesNaturalAtCentroidAll[2])-min(listCoordinatesNaturalAtCentroidAll[2])
 
 print('l_x,l_y,l_z : ', l_x, l_y, l_z)
 
